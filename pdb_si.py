@@ -20,19 +20,26 @@ class Pdb(_pdb.Pdb):
             lines = f.readlines()
             line = lines[frame.f_lineno - 1].strip()
             if '(' in line:
-                func_name = line.split('(')[0].split()[-1]
+                # Get just the function call part (after = if present)
+                call_part = line.split('(')[0].strip()
+                if '=' in call_part:
+                    call_expr = call_part.split('=')[-1].strip()
+                else:
+                    call_expr = call_part
                 
-                # Try to find function in any loaded module
-                for module in sys.modules.values():
-                    if hasattr(module, func_name):
-                        func = getattr(module, func_name)
-                        if hasattr(func, '__code__'):
-                            filename = func.__code__.co_filename
-                            lineno = func.__code__.co_firstlineno
-                            self._si_mode = True
-                            self.set_break(filename, lineno + 1, temporary=True)
-                            self.set_continue()
-                            return 1
+                # Evaluate the callable to get the actual function/method
+                try:
+                    func = eval(call_expr, frame.f_globals, frame.f_locals)
+                    if hasattr(func, '__code__'):
+                        filename = func.__code__.co_filename
+                        lineno = func.__code__.co_firstlineno
+                        self._si_mode = True
+                        self.set_break(filename, lineno + 1, temporary=True)
+                        self.set_continue()
+                        return 1
+                except Exception as e:
+                    print(f"DEBUG: call_expr='{call_expr}', error={e}")
+                    pass
         return 0
 
     def message(self, msg):
