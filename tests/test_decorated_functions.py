@@ -4,18 +4,16 @@ from calculator import Calculator
 print(f"\n*** Test with tuples - si should NOT work on tuple lines ***\n")
 import pdb;pdb.set_trace()
 
-# Test a static method or different class function - currently doesn't work
+# Test a static method
 test_result = Calculator.test_static_method(5, 10)
 
-a = 10
-
-test_result = Calculator.test_class_method(5, 10)
-
-
-# This should NOT trigger si
+# Check si does not think this is a function call
 my_tuple = (1, 2, 3, 4, 5)
 
-# This should work with si (it's a function call)
+# Test a class method
+test_result = Calculator.test_class_method(5, 10)
+
+# Constructor
 calc = Calculator("TestCalc")
 res = calc.calculate(
     10,
@@ -32,8 +30,6 @@ complex_res = calc.complex_calc(
     200,
     300
 )
-
-
 
 print("Tuple:", my_tuple)
 print("Result:", res)
