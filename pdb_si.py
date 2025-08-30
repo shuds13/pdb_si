@@ -32,13 +32,8 @@ class Pdb(_pdb.Pdb):
                 # Try to evaluate as function call
                 try:
                     func = eval(call_expr, frame.f_globals, frame.f_locals)
-                    if hasattr(func, '__code__'):
-                        filename = func.__code__.co_filename
-                        lineno = func.__code__.co_firstlineno
-                        self._si_mode = True
-                        self.set_break(filename, lineno + 1, temporary=True)
-                        self.set_continue()
-                        return 1
+                    if callable(func):
+                        return self._handle_callable(func, call_expr)
                 except Exception:
                     # eval failed - not a function call
                     print("Not a function call")
@@ -49,6 +44,29 @@ class Pdb(_pdb.Pdb):
                 return 0
         
         return 0
+    
+    def _handle_callable(self, func, call_expr):
+        """Handle different types of callable objects."""
+        # Get the location from whatever Python gives us
+        if hasattr(func, '__code__'):
+            filename = func.__code__.co_filename
+            lineno = func.__code__.co_firstlineno
+        elif hasattr(func, '__init__'):
+            # Class constructor
+            filename = func.__init__.__code__.co_filename
+            lineno = func.__init__.__code__.co_firstlineno
+        elif hasattr(func, '__call__'):
+            # Handle any other callable type
+            filename = func.__call__.__code__.co_filename
+            lineno = func.__call__.__code__.co_firstlineno
+        else:
+            print("Not a function call")
+            return 0
+        
+        self._si_mode = True
+        self.set_break(filename, lineno + 1, temporary=True)
+        self.set_continue()
+        return 1
 
     def message(self, msg):
         """Suppress breakpoint deletion messages from si command"""
