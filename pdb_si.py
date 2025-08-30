@@ -1,4 +1,8 @@
-# pdb_si.py — pdb fork adding "si" (step into next call)
+"""
+pdb extension adding "si" (step into next call).
+
+Skips function argument lines and steps directly into function bodies.
+"""
 import sys, pdb as _pdb
 import os
 
@@ -21,7 +25,7 @@ class Pdb(_pdb.Pdb):
                 # Find function line and set breakpoint
                 for i, l in enumerate(lines, 1):
                     if l.strip().startswith(f'def {func_name}('):
-                        self._si_mode = True  # Mark that we're in si mode
+                        self._si_mode = True
                         self.set_break(frame.f_code.co_filename, i + 1, temporary=True)
                         self.set_continue()
                         return 1
