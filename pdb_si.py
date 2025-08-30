@@ -49,19 +49,31 @@ class Pdb(_pdb.Pdb):
         """Handle different types of callable objects."""
         # Get the location from whatever Python gives us
         if hasattr(func, '__code__'):
-            filename = func.__code__.co_filename
-            lineno = func.__code__.co_firstlineno
+            callable_obj = func
+        elif isinstance(func, classmethod):
+            # Classmethod wrapper - get the wrapped function
+            callable_obj = func.__func__
         elif hasattr(func, '__init__'):
             # Class constructor
-            filename = func.__init__.__code__.co_filename
-            lineno = func.__init__.__code__.co_firstlineno
+            callable_obj = func.__init__
         elif hasattr(func, '__call__'):
             # Handle any other callable type
-            filename = func.__call__.__code__.co_filename
-            lineno = func.__call__.__code__.co_firstlineno
+            callable_obj = func.__call__
         else:
             print("Not a function call")
             return 0
+        
+        # Get filename and find actual def line for all callable types
+        filename = callable_obj.__code__.co_filename
+        lineno = callable_obj.__code__.co_firstlineno
+        
+        # This is only necessary to deal with decorated functions
+        # Start at our function's line and move forward until we find the def line
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+            # Keep checking our specific line - if it's a decorator, move to next line
+            while lineno <= len(lines) and lines[lineno - 1].strip().startswith('@'):
+                lineno += 1
         
         self._si_mode = True
         self.set_break(filename, lineno + 1, temporary=True)

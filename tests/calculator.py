@@ -19,8 +19,17 @@ class Calculator:
             f=z + x
         )
         return result * 2
-    
+
+
+    @staticmethod
+    def test_static_method_to_ignore(x, y):
+        return x * y + 100
+
     @staticmethod
     def test_static_method(x, y):
-        a = x
         return x * y + 100
+    
+    @classmethod
+    def test_class_method(cls, x, y):
+        cls.a = x
+        return x * y + 100    
