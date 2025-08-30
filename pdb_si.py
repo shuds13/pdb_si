@@ -22,13 +22,26 @@ class Pdb(_pdb.Pdb):
             line = lines[frame.f_lineno - 1].strip()
             if '(' in line:
                 func_name = line.split('(')[0].split()[-1]
-                # Find function line and set breakpoint
+                
+                # First try to find function in current file
                 for i, l in enumerate(lines, 1):
                     if l.strip().startswith(f'def {func_name}('):
                         self._si_mode = True
                         self.set_break(frame.f_code.co_filename, i + 1, temporary=True)
                         self.set_continue()
                         return 1
+                
+                # If not found in current file, search in imported modules
+                for module_name, module in sys.modules.items():
+                    if hasattr(module, func_name):
+                        func = getattr(module, func_name)
+                        if hasattr(func, '__code__'):
+                            filename = func.__code__.co_filename
+                            lineno = func.__code__.co_firstlineno
+                            self._si_mode = True
+                            self.set_break(filename, lineno + 1, temporary=True)
+                            self.set_continue()
+                            return 1
         return 0
 
     def message(self, msg):
