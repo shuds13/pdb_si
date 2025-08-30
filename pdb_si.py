@@ -19,15 +19,17 @@ class Pdb(_pdb.Pdb):
         with open(frame.f_code.co_filename, 'r') as f:
             lines = f.readlines()
             line = lines[frame.f_lineno - 1].strip()
+            
+            # Check if this might be a function call
             if '(' in line:
-                # Get just the function call part (after = if present)
+                # Get the call expression
                 call_part = line.split('(')[0].strip()
                 if '=' in call_part:
                     call_expr = call_part.split('=')[-1].strip()
                 else:
                     call_expr = call_part
                 
-                # Evaluate the callable to get the actual function/method
+                # Try to evaluate as function call
                 try:
                     func = eval(call_expr, frame.f_globals, frame.f_locals)
                     if hasattr(func, '__code__'):
@@ -37,9 +39,15 @@ class Pdb(_pdb.Pdb):
                         self.set_break(filename, lineno + 1, temporary=True)
                         self.set_continue()
                         return 1
-                except Exception as e:
-                    print(f"DEBUG: call_expr='{call_expr}', error={e}")
-                    pass
+                except Exception:
+                    # eval failed - not a function call
+                    print("Not a function call")
+                    return 0
+            else:
+                # No parentheses - definitely not a function call
+                print("Not a function call")
+                return 0
+        
         return 0
 
     def message(self, msg):
