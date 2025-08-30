@@ -4,7 +4,7 @@ A Python pdb extension that adds an `si` (step into) command to skip function ar
 
 Also skips validators and other redirects.
 
-## Setup
+### Setup
 
 1. Copy `pdb_si.py` to any directory
 2. Add that directory to your PYTHONPATH in your `.bashrc`:
