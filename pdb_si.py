@@ -15,7 +15,6 @@ class Pdb(_pdb.Pdb):
 
     def do_si(self, arg=None):
         """si: step directly into the next Python call (skip caller arg lines)."""
-        # Find function name from current line
         frame = self.curframe
         with open(frame.f_code.co_filename, 'r') as f:
             lines = f.readlines()
@@ -23,16 +22,8 @@ class Pdb(_pdb.Pdb):
             if '(' in line:
                 func_name = line.split('(')[0].split()[-1]
                 
-                # First try to find function in current file
-                for i, l in enumerate(lines, 1):
-                    if l.strip().startswith(f'def {func_name}('):
-                        self._si_mode = True
-                        self.set_break(frame.f_code.co_filename, i + 1, temporary=True)
-                        self.set_continue()
-                        return 1
-                
-                # If not found in current file, search in imported modules
-                for module_name, module in sys.modules.items():
+                # Try to find function in any loaded module
+                for module in sys.modules.values():
                     if hasattr(module, func_name):
                         func = getattr(module, func_name)
                         if hasattr(func, '__code__'):
