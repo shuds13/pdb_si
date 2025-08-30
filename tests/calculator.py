@@ -19,3 +19,8 @@ class Calculator:
             f=z + x
         )
         return result * 2
+    
+    @staticmethod
+    def test_static_method(x, y):
+        a = x
+        return x * y + 100
