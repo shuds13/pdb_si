@@ -92,11 +92,7 @@ def set_trace(frame=None):
         frame = sys._getframe().f_back
     Pdb().set_trace(frame)
 
-# Monkey-patch the real pdb module if environment variable is set
-if 'PDB_EXTENSION' in os.environ:
-    # Force reload of pdb module to ensure our patching works
-    if 'pdb' in sys.modules:
-        del sys.modules['pdb']
-    import pdb
-    pdb.Pdb = Pdb
-    pdb.set_trace = set_trace
+# Monkey-patch the pdb module to use our Pdb class
+import pdb
+pdb.Pdb = Pdb
+pdb.set_trace = set_trace
