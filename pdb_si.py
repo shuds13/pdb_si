@@ -24,6 +24,10 @@ class Pdb(_pdb.Pdb):
             # Check if current line has function call
             call_expr = self._extract_function_call(line)
             if call_expr:
+                # Special handling for super() calls
+                if call_expr == 'super' or line.strip().startswith('super()'):
+                    return self._handle_super_call(line, frame)
+                
                 try:
                     func = eval(call_expr, frame.f_globals, frame.f_locals)
                     if callable(func):
@@ -44,6 +48,31 @@ class Pdb(_pdb.Pdb):
             return call_part.split('=')[-1].strip()
         return call_part
     
+    def _handle_super_call(self, line, frame):
+        """Handle super() method calls."""
+        try:
+            # Extract the method name from super().method_name(...)
+            if '.' in line and 'super().' in line:
+                # Extract method name after super().
+                method_part = line.split('super().')[1]
+                method_name = method_part.split('(')[0]
+                
+                # Get the current class from the frame
+                if 'self' in frame.f_locals:
+                    self_obj = frame.f_locals['self']
+                    current_class = self_obj.__class__
+                    # Get parent classes
+                    for base in current_class.__mro__[1:]:  # Skip self class
+                        if hasattr(base, method_name):
+                            parent_method = getattr(base, method_name)
+                            if callable(parent_method) and parent_method != getattr(object, method_name, None):
+                                return self._handle_callable(parent_method, f'super().{method_name}')
+            print("Cannot step into super() call")
+            return 0
+        except Exception as e:
+            print(f"Cannot step into super() call: {e}")
+            return 0
+
     def _handle_callable(self, func, call_expr):
         """Handle different types of callable objects."""
         # Get the location from whatever Python gives us

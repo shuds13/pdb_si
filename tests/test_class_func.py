@@ -1,11 +1,32 @@
 import pdb_si
 from func2 import target_func2
 
-class Calculator:
-    def __init__(self, name):
+class BaseCalculator:
+    def __init__(self, name, version="1.0"):
         self.name = name
+        self.version = version
+        print(f"BaseCalculator initialized: {name} v{version}")
     
     def calculate(self, a, b, c, d, e=0, f=1):
+        print("BaseCalculator.calculate called")
+        s1 = a + b
+        s2 = c + d
+        s3 = e + f
+        return s1 + s2 + s3  # Simple addition
+
+class Calculator(BaseCalculator):
+    def __init__(self, name):
+        # Check can si into super() call
+        import pdb; pdb.set_trace()  # Test super().__init__
+        super().__init__(name, "2.0")
+        self.operations_count = 0
+    
+    def calculate(self, a, b, c, d, e=0, f=1):
+        # Test super() call to parent's calculate method
+        import pdb; pdb.set_trace()  # Test super().calculate
+        base_result = super().calculate(a, b, c, d, e, f)
+        self.operations_count += 1
+        # Child version does multiplication instead of addition
         s1 = a + b
         s2 = c + d
         s3 = e + f
