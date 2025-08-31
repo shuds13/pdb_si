@@ -103,8 +103,7 @@ class Pdb(_pdb.Pdb):
                 if line.endswith(':'):
                     lineno += 1  # Move past the : line to first executable line
                     break
-                lineno += 1  # why needed for multi-line definitions
-                # SH TODO: Check have not gone past the func (e.g., single line)
+                lineno += 1
         
         self._si_mode = True
         self.set_break(filename, lineno, temporary=True)
