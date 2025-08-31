@@ -6,6 +6,7 @@ Skips function argument lines and steps directly into function bodies.
 import sys, pdb as _pdb
 import os
 import re
+import inspect
 
 class Pdb(_pdb.Pdb):
     def __init__(self, *a, **k):
@@ -25,10 +26,9 @@ class Pdb(_pdb.Pdb):
             # Check if current line has function call
             call_expr = self._extract_function_call(line)
             if call_expr:
-                # Special handling for super() calls
-                if call_expr == 'super' or line.strip().startswith('super()'):
-                    return self._handle_super_call(line, frame)
-                
+                # For super() calls need to get class context
+                call_expr = self._handle_super_call(call_expr, frame)
+              
                 try:
                     func = eval(call_expr, frame.f_globals, frame.f_locals)
                     if callable(func):
@@ -41,53 +41,32 @@ class Pdb(_pdb.Pdb):
             return 0
     
     def _extract_function_call(self, line):
-        """Extract function name from a line containing a function call."""
         if '(' not in line:
             return None
-        call_part = line.split('(')[0].strip()
-        if '=' in call_part:
-            return call_part.split('=')[-1].strip()
-        return call_part
-    
-    def _handle_super_call(self, line, frame):
-        """Handle super() method calls."""
-        # SH TODO: See if can get rid of this - exec should be able to resolve
-        try:
-            # Extract the method name from super().method_name(...)
-            if '.' in line and 'super().' in line:
-                # Extract method name after super().
-                method_part = line.split('super().')[1]
-                method_name = method_part.split('(')[0]
-                
-                # Get the current class from the frame
-                if 'self' in frame.f_locals:
-                    self_obj = frame.f_locals['self']
-                    # Get the class that defines the current method from the frame's filename and line
-                    frame_filename = frame.f_code.co_filename
-                    frame_lineno = frame.f_lineno
-                    current_class = self_obj.__class__
-                    
-                    # Find which class in the MRO contains the method we're currently in
-                    for cls in self_obj.__class__.__mro__:
-                        if hasattr(cls, '__init__') and hasattr(cls.__init__, '__code__'):
-                            method_code = cls.__init__.__code__
-                            if (method_code.co_filename == frame_filename and 
-                                method_code.co_firstlineno <= frame_lineno <= 
-                                method_code.co_firstlineno + method_code.co_nlocals + 20):
-                                current_class = cls
-                                break
+        call_expr = line.rsplit('(', 1)[0].strip()
+        if '=' in call_expr:
+            call_expr = call_expr.split('=', 1)[-1].strip()
+        return call_expr
 
-                    # Get parent classes
-                    for base in current_class.__mro__[1:]:  # Skip self class
-                        if hasattr(base, method_name):
-                            parent_method = getattr(base, method_name)
-                            if callable(parent_method) and parent_method != getattr(object, method_name, None):
-                                return self._handle_callable(parent_method, f'super().{method_name}')
-            print("Cannot step into super() call")
-            return 0
-        except Exception as e:
-            print(f"Cannot step into super() call: {e}")
-            return 0
+    def _current_class(self, frame):
+        selfobj = frame.f_locals.get('self')
+        if not selfobj:
+            return None
+        name = frame.f_code.co_name
+        for cls in inspect.getmro(selfobj.__class__):
+            f = cls.__dict__.get(name)
+            func = getattr(f, '__func__', f)
+            if getattr(func, '__code__', None) is frame.f_code:
+                return cls
+        return selfobj.__class__
+
+    def _handle_super_call(self, call_expr, frame):
+        """Handle super() method calls by replacing with explicit class reference."""
+        if call_expr and call_expr.startswith('super().') and 'self' in frame.f_locals:
+            cls = self._current_class(frame)
+            if cls:
+                call_expr = call_expr.replace('super()', f'super({cls.__name__}, self)', 1)
+        return call_expr
 
     def _handle_callable(self, func, call_expr):
         """Handle different types of callable objects."""
