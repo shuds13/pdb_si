@@ -5,6 +5,7 @@ Skips function argument lines and steps directly into function bodies.
 """
 import sys, pdb as _pdb
 import os
+import re
 
 class Pdb(_pdb.Pdb):
     def __init__(self, *a, **k):
@@ -50,6 +51,7 @@ class Pdb(_pdb.Pdb):
     
     def _handle_super_call(self, line, frame):
         """Handle super() method calls."""
+        # SH TODO: See if can get rid of this - exec should be able to resolve
         try:
             # Extract the method name from super().method_name(...)
             if '.' in line and 'super().' in line:
@@ -96,6 +98,16 @@ class Pdb(_pdb.Pdb):
         lineno = callable_obj.__code__.co_firstlineno
         
         # Skip to first executable line
+        lineno = self._find_first_executable_line(filename, lineno)
+        
+        self._si_mode = True
+        # print(f"setting breakpoint to {filename}:{lineno}")
+        self.set_break(filename, lineno, temporary=True)
+        self.set_continue()
+        return 1
+    
+    def _find_first_executable_line(self, filename, lineno):
+        """Find the first executable line after function signature."""
         with open(filename, 'r') as f:
             lines = f.readlines()
             while lineno <= len(lines):
@@ -104,11 +116,31 @@ class Pdb(_pdb.Pdb):
                     lineno += 1  # Move past the : line to first executable line
                     break
                 lineno += 1
+
+            # Skip comment lines and docstrings to find first executable line
+            in_doc = False
+            dq = None
+            while lineno <= len(lines):
+                s = lines[lineno - 1].strip()
+                if in_doc:
+                    if dq in s:
+                        in_doc = False
+                    lineno += 1
+                    continue
+                if not s or s.startswith('#'):
+                    lineno += 1
+                    continue
+                m = re.match(r"^[rbuftRBUFT]*([\"']{3})", s)
+                if m:
+                    dq = m.group(1)
+                    # single-line docstring if closing quotes also on this line
+                    if s.find(dq, m.end()) == -1:
+                        in_doc = True
+                    lineno += 1
+                    continue
+                break  # first non-comment, non-docstring line
         
-        self._si_mode = True
-        self.set_break(filename, lineno, temporary=True)
-        self.set_continue()
-        return 1
+        return lineno
 
     def message(self, msg):
         """Suppress breakpoint deletion messages from si command"""

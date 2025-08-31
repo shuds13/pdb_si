@@ -16,6 +16,12 @@ class BaseCalculator:
 
 class Calculator(BaseCalculator):
     def __init__(self, name):
+        ''' on line docstring'''
+        """
+        more docsring
+        
+        """
+
         # Check can si into super() call
         super().__init__(name, "2.0")
         self.operations_count = 0
