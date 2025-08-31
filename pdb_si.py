@@ -95,24 +95,16 @@ class Pdb(_pdb.Pdb):
         filename = callable_obj.__code__.co_filename
         lineno = callable_obj.__code__.co_firstlineno
         
-        # Skip decorators and multi-line function signatures
+        # Skip past multi-line function signature to first executable line
         with open(filename, 'r') as f:
             lines = f.readlines()
-            # Skip decorators
-            while lineno <= len(lines) and lines[lineno - 1].strip().startswith('@'):
-                lineno += 1
-            # Skip past multi-line function signature to first executable line
-            if lineno <= len(lines) and lines[lineno - 1].strip().startswith('def '):
-                lineno += 1
-                # Skip lines that are part of function signature
-                while lineno <= len(lines):
-                    line = lines[lineno - 1].strip()
-                    # Skip empty lines, lines ending with comma, and closing parenthesis
-                    if not line or line.endswith(',') or line.startswith(')') or line == ')':
-                        lineno += 1
-                    else:
-                        # Found first executable line
-                        break
+            # Skip lines that are part of function signature
+            while lineno <= len(lines):
+                line = lines[lineno - 1].strip()
+                if line.endswith(':'):
+                    lineno += 1  # Move past the : line to first executable line
+                    break
+                lineno += 1  # why needed for multi-line definitions
         
         self._si_mode = True
         self.set_break(filename, lineno, temporary=True)

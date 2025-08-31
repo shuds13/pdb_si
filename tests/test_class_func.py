@@ -17,13 +17,11 @@ class BaseCalculator:
 class Calculator(BaseCalculator):
     def __init__(self, name):
         # Check can si into super() call
-        import pdb; pdb.set_trace()  # Test super().__init__
         super().__init__(name, "2.0")
         self.operations_count = 0
     
     def calculate(self, a, b, c, d, e=0, f=1):
         # Test super() call to parent's calculate method
-        import pdb; pdb.set_trace()  # Test super().calculate
         base_result = super().calculate(a, b, c, d, e, f)
         self.operations_count += 1
         # Child version does multiplication instead of addition
