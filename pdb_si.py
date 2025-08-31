@@ -18,32 +18,31 @@ class Pdb(_pdb.Pdb):
         frame = self.curframe
         with open(frame.f_code.co_filename, 'r') as f:
             lines = f.readlines()
-            line = lines[frame.f_lineno - 1].strip()
+            current_line_no = frame.f_lineno - 1
+            line = lines[current_line_no].strip()
             
-            # Check if this might be a function call
-            if '(' in line:
-                # Get the call expression
-                call_part = line.split('(')[0].strip()
-                if '=' in call_part:
-                    call_expr = call_part.split('=')[-1].strip()
-                else:
-                    call_expr = call_part
-                
-                # Try to evaluate as function call
+            # Check if current line has function call
+            call_expr = self._extract_function_call(line)
+            if call_expr:
                 try:
                     func = eval(call_expr, frame.f_globals, frame.f_locals)
                     if callable(func):
                         return self._handle_callable(func, call_expr)
                 except Exception:
-                    # eval failed - not a function call
                     print("Not a function call")
                     return 0
-            else:
-                # No parentheses - definitely not a function call
-                print("Not a function call")
-                return 0
-        
-        return 0
+            
+            print("Not a function call")
+            return 0
+    
+    def _extract_function_call(self, line):
+        """Extract function name from a line containing a function call."""
+        if '(' not in line:
+            return None
+        call_part = line.split('(')[0].strip()
+        if '=' in call_part:
+            return call_part.split('=')[-1].strip()
+        return call_part
     
     def _handle_callable(self, func, call_expr):
         """Handle different types of callable objects."""
@@ -67,16 +66,27 @@ class Pdb(_pdb.Pdb):
         filename = callable_obj.__code__.co_filename
         lineno = callable_obj.__code__.co_firstlineno
         
-        # This is only necessary to deal with decorated functions
-        # Start at our function's line and move forward until we find the def line
+        # Skip decorators and multi-line function signatures
         with open(filename, 'r') as f:
             lines = f.readlines()
-            # Keep checking our specific line - if it's a decorator, move to next line
+            # Skip decorators
             while lineno <= len(lines) and lines[lineno - 1].strip().startswith('@'):
                 lineno += 1
+            # Skip past multi-line function signature to first executable line
+            if lineno <= len(lines) and lines[lineno - 1].strip().startswith('def '):
+                lineno += 1
+                # Skip lines that are part of function signature
+                while lineno <= len(lines):
+                    line = lines[lineno - 1].strip()
+                    # Skip empty lines, lines ending with comma, and closing parenthesis
+                    if not line or line.endswith(',') or line.startswith(')') or line == ')':
+                        lineno += 1
+                    else:
+                        # Found first executable line
+                        break
         
         self._si_mode = True
-        self.set_break(filename, lineno + 1, temporary=True)
+        self.set_break(filename, lineno, temporary=True)
         self.set_continue()
         return 1
 
