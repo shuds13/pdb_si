@@ -62,7 +62,21 @@ class Pdb(_pdb.Pdb):
                 # Get the current class from the frame
                 if 'self' in frame.f_locals:
                     self_obj = frame.f_locals['self']
+                    # Get the class that defines the current method from the frame's filename and line
+                    frame_filename = frame.f_code.co_filename
+                    frame_lineno = frame.f_lineno
                     current_class = self_obj.__class__
+                    
+                    # Find which class in the MRO contains the method we're currently in
+                    for cls in self_obj.__class__.__mro__:
+                        if hasattr(cls, '__init__') and hasattr(cls.__init__, '__code__'):
+                            method_code = cls.__init__.__code__
+                            if (method_code.co_filename == frame_filename and 
+                                method_code.co_firstlineno <= frame_lineno <= 
+                                method_code.co_firstlineno + method_code.co_nlocals + 20):
+                                current_class = cls
+                                break
+
                     # Get parent classes
                     for base in current_class.__mro__[1:]:  # Skip self class
                         if hasattr(base, method_name):

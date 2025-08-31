@@ -1,8 +1,25 @@
 import pdb_si
 from func2 import target_func2
 
-class BaseCalculator:
+
+class BaseBaseBaseCalculator():
+    def __init__(self, name, version="0.0"):
+        print(f"BaseBaseBaseCalculator initialized: {name} v{version}")
+    
+    def calculate(self, a, b, c, d, e=0, f=1):
+        pass
+
+class BaseBaseCalculator(BaseBaseBaseCalculator):
+    def __init__(self, name, version="0.0"):
+        super().__init__(name, version)
+        print(f"BaseBaseCalculator initialized: {name} v{version}")
+    
+    def calculate(self, a, b, c, d, e=0, f=1):
+        pass
+
+class BaseCalculator(BaseBaseCalculator):
     def __init__(self, name, version="1.0"):
+        super().__init__(name, version)
         self.name = name
         self.version = version
         print(f"BaseCalculator initialized: {name} v{version}")
