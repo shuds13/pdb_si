@@ -86,7 +86,10 @@ class Pdb(_pdb.Pdb):
             print("Not a function call")
             return 0
         
-        # Get filename and find actual def line for all callable types
+        # Use raw_function if available to avoid stopping in validators/decorators
+        if hasattr(callable_obj, 'raw_function'):
+            callable_obj = callable_obj.raw_function
+        
         filename = callable_obj.__code__.co_filename
         lineno = callable_obj.__code__.co_firstlineno
         
@@ -94,7 +97,6 @@ class Pdb(_pdb.Pdb):
         lineno = self._find_first_executable_line(filename, lineno)
         
         self._si_mode = True
-        # print(f"setting breakpoint to {filename}:{lineno}")
         self.set_break(filename, lineno, temporary=True)
         self.set_continue()
         return 1
