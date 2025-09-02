@@ -34,7 +34,7 @@ class Pdb(_pdb.Pdb):
                     if callable(func):
                         return self._handle_callable(func, call_expr)
                 except Exception:
-                    print("Not a function call")
+                    print("Could not step into function")
                     return 0
             
             print("Not a function call")
