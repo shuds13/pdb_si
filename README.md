@@ -17,7 +17,7 @@ Also skips decorators, validators and other redirects.
 
 Add ``import pdb_si`` at the top of your code and then use pdb as normal.
 
-See tests/test_simple.py for demo.
+See [tests/test_simple.py](tests/test_simple.py) for demo.
 
 ### Issues
 
