@@ -21,6 +21,4 @@ See [tests/test_simple.py](tests/test_simple.py) for demo.
 
 ### Issues
 
-This is not guaranteed to work for all functions.
-
 Please report issues in github issues.
