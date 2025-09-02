@@ -1,8 +1,9 @@
 ## pdb-si
 
-A Python pdb extension that adds an `si` (step into) command to skip function argument lines and step directly into function bodies. 
+A Python pdb extension that adds an `si` (step into) command to skip function
+argument lines and step directly into function bodies.
 
-Also skips validators and other redirects.
+Also skips decorators, validators and other redirects.
 
 ### Setup
 
