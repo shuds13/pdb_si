@@ -41,14 +41,45 @@ class Pdb(_pdb.Pdb):
             return 0
     
     def _extract_function_call(self, line):
-        if '(' not in line:
+        s = line.strip()
+        if '(' not in s:
             return None
-        call_expr = line.rsplit('(', 1)[0].strip()
-        if '=' in call_expr:
-            call_expr = call_expr.split('=', 1)[-1].strip()
-        if call_expr.startswith('return '):
-            call_expr = call_expr[len('return '):].strip()
-        return call_expr
+
+        # find first '(' at top level (ignore inside [] and {})
+        b = c = 0
+        i = -1
+        for k, ch in enumerate(s):
+            if ch == '[': b += 1
+            elif ch == ']': b -= 1
+            elif ch == '{': c += 1
+            elif ch == '}': c -= 1
+            elif ch == '(' and b == 0 and c == 0:
+                i = k
+                break
+        if i == -1:
+            return None
+
+        # find matching ')' for that '(' to detect ".method(" chain (e.g., super().__init__)
+        p = 0
+        j = -1
+        for k in range(i, len(s)):
+            if s[k] == '(': p += 1
+            elif s[k] == ')':
+                p -= 1
+                if p == 0:
+                    j = k
+                    break
+        if j != -1 and j + 1 < len(s) and s[j + 1] == '.':
+            nxt = s.find('(', j + 1)
+            if nxt != -1:
+                i = nxt
+
+        left = s[:i].strip()
+        if left.startswith('return '):
+            left = left[len('return '):].strip()
+        if '=' in left:
+            left = left.split('=', 1)[-1].strip()
+        return left
 
     def _current_class(self, frame):
         selfobj = frame.f_locals.get('self')
