@@ -26,7 +26,12 @@ The function must be the top level call on a line - does not work with embedded 
 
 E.g., does not work with:
 
-   a = [funca()],
+
+```python
+
+a = [funca()]
+
+```
 
 ### Issues
 
