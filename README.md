@@ -19,6 +19,15 @@ Add ``import pdb_si`` at the top of your code and then use pdb as normal.
 
 See [tests/test_simple.py](tests/test_simple.py) for demo.
 
+
+### Limitations
+
+The function must be the top level call on a line - does not work with embedded functions. 
+
+E.g., does not work with:
+
+   a = [funca()],
+
 ### Issues
 
 Please report issues in github issues.
