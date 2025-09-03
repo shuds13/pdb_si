@@ -46,6 +46,8 @@ class Pdb(_pdb.Pdb):
         call_expr = line.rsplit('(', 1)[0].strip()
         if '=' in call_expr:
             call_expr = call_expr.split('=', 1)[-1].strip()
+        if call_expr.startswith('return '):
+            call_expr = call_expr[len('return '):].strip()
         return call_expr
 
     def _current_class(self, frame):
